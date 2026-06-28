@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La biblioteca de Fiona</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:      #1C1917;
+    --paper:    #F7F3ED;
+    --paper-2:  #EFE9DF;
+    --prussian: #2D5D7B;
+    --gold:     #C9A84C;
+    --muted:    #7A6F65;
+    --cream:    #FAF8F4;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(255,255,255,0.03) 28px,
+      rgba(255,255,255,0.03) 29px
+    );
+    pointer-events: none;
+  }
+  .header-ornament {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--paper);
+  }
+  header h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  header p {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    color: rgba(247,243,237,0.55);
+    font-style: italic;
+  }
+
+  /* ── NAV TABS ── */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: var(--ink);
+    border-top: 1px solid rgba(201,168,76,0.3);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: rgba(247,243,237,0.5);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.9rem 2.5rem;
+    cursor: pointer;
+    transition: color 0.2s, border-bottom 0.2s;
+    border-bottom: 2px solid transparent;
+    position: relative;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: var(--prussian);
+    margin-bottom: 0.3rem;
+  }
+  .section-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--paper-2);
+  }
+
+  /* ── ADD FORM ── */
+  .add-panel {
+    background: var(--cream);
+    border: 1px solid var(--paper-2);
+    border-left: 3px solid var(--gold);
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    border-radius: 0 4px 4px 0;
+  }
+  .add-panel h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--prussian);
+    margin-bottom: 1rem;
+    font-weight: 400;
+  }
+  .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .form-row input, .form-row textarea, .form-row select {
+    flex: 1;
+    min-width: 180px;
+    background: white;
+    border: 1px solid #DDD8D0;
+    padding: 0.6rem 0.8rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--prussian);
+  }
+  .form-row textarea { min-height: 80px; resize: vertical; }
+  .btn-add {
+    background: var(--prussian);
+    color: var(--paper);
+    border: none;
+    padding: 0.6rem 1.5rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .btn-add:hover { background: var(--ink); }
+
+  /* ── BOOKS GRID ── */
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .book-card {
+    background: white;
+    border: 1px solid var(--paper-2);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 2px 3px 12px rgba(28,25,23,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .book-card:hover { transform: translateY(-3px); box-shadow: 4px 8px 20px rgba(28,25,23,0.1); }
+  .book-spine {
+    height: 6px;
+    background: var(--prussian);
+  }
+  .book-body { padding: 1rem; }
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+  }
+  .book-author {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+  .book-rating { color: var(--gold); font-size: 0.85rem; margin-bottom: 0.5rem; }
+  .book-notes {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--paper-2);
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .book-delete {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: none;
+    border: none;
+    color: #CCC;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .book-delete:hover { color: #c0392b; }
+  .book-genre {
+    display: inline-block;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--paper-2);
+    color: var(--muted);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    margin-bottom: 0.4rem;
+  }
+
+  /* ── QUOTES WALL ── */
+  .quotes-wall {
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+  @media (max-width: 640px) { .quotes-wall { columns: 1; } }
+
+  .quote-card {
+    break-inside: avoid;
+    background: white;
+    border: 1px solid var(--paper-2);
+    margin-bottom: 1.5rem;
+    padding: 1.5rem 1.5rem 1rem;
+    box-shadow: 2px 3px 10px rgba(28,25,23,0.05);
+    position: relative;
+    border-radius: 1px;
+  }
+  .quote-card::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    color: var(--gold);
+    opacity: 0.35;
+    position: absolute;
+    top: -0.5rem;
+    left: 0.75rem;
+    line-height: 1;
+  }
+  .quote-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.75;
+    color: var(--ink);
+    font-weight: 300;
+    padding-top: 1rem;
+    margin-bottom: 1rem;
+  }
+  .quote-source {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    border-top: 1px solid var(--paper-2);
+    padding-top: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .quote-delete {
+    background: none;
+    border: none;
+    color: #CCC;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .quote-delete:hover { color: #c0392b; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.95rem;
+  }
+  .empty-state span { display: block; font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+
+  /* ── STATS ── */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .stat {
+    background: white;
+    border: 1px solid var(--paper-2);
+    border-top: 2px solid var(--prussian);
+    padding: 0.75rem 1.25rem;
+    min-width: 110px;
+  }
+  .stat-n {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    color: var(--prussian);
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* color spines variety */
+  .book-card:nth-child(3n)   .book-spine { background: var(--gold); }
+  .book-card:nth-child(5n)   .book-spine { background: #7A4F3A; }
+  .book-card:nth-child(7n)   .book-spine { background: #3A6B4F; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-ornament">— Diario de Lecturas —</div>
+  <h1>La <em>Biblioteca</em> de Fiona</h1>
+  <p>Libros que me marcaron · Palabras que me quedaron</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab('libros')">📚 Libros leídos</button>
+  <button class="tab-btn" onclick="showTab('citas')">✍️ Citas favoritas</button>
+</nav>
+
+<main>
+
+  <!-- ── LIBROS ── -->
+  <section id="libros" class="section active">
+    <h2 class="section-title">Libros leídos</h2>
+    <p class="section-sub">Tu estante personal, cada libro con su historia.</p>
+
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-n" id="stat-libros">0</div><div class="stat-label">Libros</div></div>
+      <div class="stat"><div class="stat-n" id="stat-rating">—</div><div class="stat-label">Rating medio</div></div>
+    </div>
+
+    <div class="add-panel">
+      <h3>+ Agregar un libro</h3>
+      <div class="form-row">
+        <input id="b-title" type="text" placeholder="Título del libro *">
+        <input id="b-author" type="text" placeholder="Autor/a">
+        <input id="b-genre" type="text" placeholder="Género (ej: Novela, Ensayo)">
+      </div>
+      <div class="form-row">
+        <select id="b-rating">
+          <option value="">Rating...</option>
+          <option value="5">★★★★★ Imprescindible</option>
+          <option value="4">★★★★☆ Muy bueno</option>
+          <option value="3">★★★☆☆ Bueno</option>
+          <option value="2">★★☆☆☆ Regular</option>
+          <option value="1">★☆☆☆☆ No me convenció</option>
+        </select>
+        <textarea id="b-notes" placeholder="Notas personales, qué te dejó, por qué lo recomendarías..."></textarea>
+      </div>
+      <button class="btn-add" onclick="addBook()">Guardar libro</button>
+    </div>
+
+    <div class="books-grid" id="books-container">
+      <div class="empty-state"><span>📖</span>Tu estante está esperando su primer libro.</div>
+    </div>
+  </section>
+
+  <!-- ── CITAS ── -->
+  <section id="citas" class="section">
+    <h2 class="section-title">Citas favoritas</h2>
+    <p class="section-sub">Fragmentos que vale la pena guardar para siempre.</p>
+
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-n" id="stat-citas">0</div><div class="stat-label">Citas</div></div>
+    </div>
+
+    <div class="add-panel">
+      <h3>+ Agregar una cita</h3>
+      <div class="form-row">
+        <textarea id="q-text" placeholder="La cita, el fragmento, las palabras que te marcaron... *" style="min-height:90px;"></textarea>
+      </div>
+      <div class="form-row">
+        <input id="q-book" type="text" placeholder="Título del libro">
+        <input id="q-author" type="text" placeholder="Autor/a">
+        <input id="q-page" type="text" placeholder="Página (opcional)">
+      </div>
+      <button class="btn-add" onclick="addQuote()">Guardar cita</button>
+    </div>
+
+    <div class="quotes-wall" id="quotes-container">
+      <div class="empty-state" style="column-span:all"><span>✍️</span>Ninguna cita guardada todavía.</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // ── DATA LAYER (localStorage) ──
+  const BOOKS_KEY  = 'biblioteca_libros_v1';
+  const QUOTES_KEY = 'biblioteca_citas_v1';
+
+  function load(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+  }
+  function save(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  let books  = load(BOOKS_KEY);
+  let quotes = load(QUOTES_KEY);
+
+  // ── TABS ──
+  function showTab(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── STARS ──
+  function stars(n) {
+    if (!n) return '';
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
+  }
+
+  // ── RENDER BOOKS ──
+  function renderBooks() {
+    const c = document.getElementById('books-container');
+    document.getElementById('stat-libros').textContent = books.length;
+
+    if (books.length === 0) {
+      c.innerHTML = '<div class="empty-state"><span>📖</span>Tu estante está esperando su primer libro.</div>';
+      document.getElementById('stat-rating').textContent = '—';
+      return;
+    }
+
+    const rated = books.filter(b => b.rating);
+    const avg   = rated.length ? (rated.reduce((s, b) => s + +b.rating, 0) / rated.length).toFixed(1) : '—';
+    document.getElementById('stat-rating').textContent = avg !== '—' ? avg + ' ★' : '—';
+
+    c.innerHTML = books.map((b, i) => `
+      <div class="book-card">
+        <div class="book-spine"></div>
+        <div class="book-body">
+          <button class="book-delete" onclick="deleteBook(${i})" title="Eliminar">✕</button>
+          ${b.genre ? `<span class="book-genre">${esc(b.genre)}</span>` : ''}
+          <div class="book-title">${esc(b.title)}</div>
+          ${b.author ? `<div class="book-author">${esc(b.author)}</div>` : ''}
+          ${b.rating ? `<div class="book-rating">${stars(+b.rating)}</div>` : ''}
+          ${b.notes  ? `<div class="book-notes">${esc(b.notes)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── RENDER QUOTES ──
+  function renderQuotes() {
+    const c = document.getElementById('quotes-container');
+    document.getElementById('stat-citas').textContent = quotes.length;
+
+    if (quotes.length === 0) {
+      c.innerHTML = '<div class="empty-state" style="column-span:all"><span>✍️</span>Ninguna cita guardada todavía.</div>';
+      return;
+    }
+
+    c.innerHTML = quotes.map((q, i) => `
+      <div class="quote-card">
+        <div class="quote-text">${esc(q.text)}</div>
+        <div class="quote-source">
+          <span>${[q.book, q.author, q.page ? 'p. ' + q.page : ''].filter(Boolean).join(' · ') || '—'}</span>
+          <button class="quote-delete" onclick="deleteQuote(${i})" title="Eliminar">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── ADD BOOK ──
+  function addBook() {
+    const title = document.getElementById('b-title').value.trim();
+    if (!title) { alert('El título es obligatorio.'); return; }
+    books.unshift({
+      title,
+      author: document.getElementById('b-author').value.trim(),
+      genre:  document.getElementById('b-genre').value.trim(),
+      rating: document.getElementById('b-rating').value,
+      notes:  document.getElementById('b-notes').value.trim(),
+    });
+    save(BOOKS_KEY, books);
+    ['b-title','b-author','b-genre','b-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('b-rating').value = '';
+    renderBooks();
+  }
+
+  // ── ADD QUOTE ──
+  function addQuote() {
+    const text = document.getElementById('q-text').value.trim();
+    if (!text) { alert('La cita no puede estar vacía.'); return; }
+    quotes.unshift({
+      text,
+      book:   document.getElementById('q-book').value.trim(),
+      author: document.getElementById('q-author').value.trim(),
+      page:   document.getElementById('q-page').value.trim(),
+    });
+    save(QUOTES_KEY, quotes);
+    ['q-text','q-book','q-author','q-page'].forEach(id => document.getElementById(id).value = '');
+    renderQuotes();
+  }
+
+  // ── DELETE ──
+  function deleteBook(i) {
+    if (!confirm('¿Eliminar este libro?')) return;
+    books.splice(i, 1);
+    save(BOOKS_KEY, books);
+    renderBooks();
+  }
+  function deleteQuote(i) {
+    if (!confirm('¿Eliminar esta cita?')) return;
+    quotes.splice(i, 1);
+    save(QUOTES_KEY, quotes);
+    renderQuotes();
+  }
+
+  // ── ESCAPE HTML ──
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  // ── INIT ──
+  renderBooks();
+  renderQuotes();
+</script>
+</body>
+</html>
