@@ -7,6 +7,7 @@
 <title>Biblioteca de Fiona</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
 <style>
+ .book-year { font-size:.7rem; color:var(--prussian); letter-spacing:.05em; margin-top:.3rem; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --ink:      #1C1917;
@@ -172,6 +173,7 @@
         <input id="b-title" type="text" placeholder="Título del libro *">
         <input id="b-author" type="text" placeholder="Autor/a">
         <input id="b-genre" type="text" placeholder="Género (ej: Novela, Ensayo)">
+        <input id="b-year" type="number" placeholder="Año leído" min="1900" max="2099">
       </div>
       <div class="form-row">
         <select id="b-rating">
@@ -345,6 +347,7 @@
           ${b.autor ? `<div class="book-author">${esc(b.autor)}</div>` : ''}
           ${b.rating ? `<div class="book-rating">${stars(b.rating)}</div>` : ''}
           ${b.notas ? `<div class="book-notes">${esc(b.notas)}</div>` : ''}
+          ${b.anio ? `<div class="book-year">Leído en ${esc(b.anio)}</div>` : ''}
         </div>
       </div>
     `).join('');
@@ -384,6 +387,7 @@
         genero: document.getElementById('b-genre').value.trim() || null,
         rating: +document.getElementById('b-rating').value || null,
         notas:  document.getElementById('b-notes').value.trim() || null,
+        anio: +document.getElementById('b-year').value || null,
       });
       books.unshift(newBook);
       ['b-title','b-author','b-genre','b-notes'].forEach(id => document.getElementById(id).value = '');
